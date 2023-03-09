@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		6A8E345429B9FD7200F43F88 /* LexicalAnalyzerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A8E345329B9FD7200F43F88 /* LexicalAnalyzerView.swift */; };
+		6A8E345729BA000000F43F88 /* TextEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A8E345629BA000000F43F88 /* TextEditorView.swift */; };
 		6AB2792E29A579B0005B4924 /* LanguageTranslatorApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AB2792D29A579B0005B4924 /* LanguageTranslatorApp.swift */; };
 		6AB2793029A579B0005B4924 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AB2792F29A579B0005B4924 /* ContentView.swift */; };
 		6AB2793229A579B2005B4924 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 6AB2793129A579B2005B4924 /* Assets.xcassets */; };
@@ -16,6 +18,8 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		6A8E345329B9FD7200F43F88 /* LexicalAnalyzerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LexicalAnalyzerView.swift; sourceTree = "<group>"; };
+		6A8E345629BA000000F43F88 /* TextEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextEditorView.swift; sourceTree = "<group>"; };
 		6AB2792A29A579B0005B4924 /* LanguageTranslator.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LanguageTranslator.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		6AB2792D29A579B0005B4924 /* LanguageTranslatorApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LanguageTranslatorApp.swift; sourceTree = "<group>"; };
 		6AB2792F29A579B0005B4924 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -37,6 +41,16 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		6A8E345529B9FF7A00F43F88 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				6AB2792F29A579B0005B4924 /* ContentView.swift */,
+				6A8E345329B9FD7200F43F88 /* LexicalAnalyzerView.swift */,
+				6A8E345629BA000000F43F88 /* TextEditorView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
 		6AB2792129A579B0005B4924 = {
 			isa = PBXGroup;
 			children = (
@@ -56,8 +70,8 @@
 		6AB2792C29A579B0005B4924 /* LanguageTranslator */ = {
 			isa = PBXGroup;
 			children = (
+				6A8E345529B9FF7A00F43F88 /* Views */,
 				6AB2792D29A579B0005B4924 /* LanguageTranslatorApp.swift */,
-				6AB2792F29A579B0005B4924 /* ContentView.swift */,
 				6AB2793129A579B2005B4924 /* Assets.xcassets */,
 				6AB2793629A579B2005B4924 /* LanguageTranslator.entitlements */,
 				6AB2793329A579B2005B4924 /* Preview Content */,
@@ -145,10 +159,12 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				6A8E345729BA000000F43F88 /* TextEditorView.swift in Sources */,
 				6AB2793029A579B0005B4924 /* ContentView.swift in Sources */,
 				6AB2792E29A579B0005B4924 /* LanguageTranslatorApp.swift in Sources */,
 				6AB2793F29A57E21005B4924 /* StaticLists.swift in Sources */,
 				6AB2794129A5812C005B4924 /* LexicalAnalyzer.swift in Sources */,
+				6A8E345429B9FD7200F43F88 /* LexicalAnalyzerView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -42,14 +42,20 @@ class LexicalAnalyzer: ObservableObject {
         buffer = ""
         
         while processStep() { }
-        
-        let (nextState, functionIndex) = currentState("")
-        currentStateIndex = nextState
-        lexicalProcedures[functionIndex!](buffer)
+    }
+    
+    func setupSumbols(symbols: String) {
+        processingSymbols = symbols
     }
     
     func processStep() -> Bool {
-        guard processingSymbols.count != 0 else { return false }
+        guard processingSymbols.count != 0 else {
+            let (nextState, functionIndex) = currentState("")
+            currentStateIndex = nextState
+            lexicalProcedures[functionIndex!](buffer)
+            buffer = ""
+            return false
+        }
         
         let char = String(processingSymbols.first!)
         
