@@ -8,8 +8,8 @@
 import SwiftUI
 
 struct LexicalAnalyzerView: View {
-    @State var identifiers: [String] = []
-    @State var constants: [String] = []
+    @State var stateIdentifiers: [String] = []
+    @State var stateConstants: [String] = []
     
     @State var sourceCode: String = ""
     @State var sourceSelection: Range<Int>? = nil
@@ -48,9 +48,9 @@ struct LexicalAnalyzerView: View {
                     .frame(height: 32)
                 
                 List {
-                    ForEach(identifiers.indices, id: \.self) { index in
+                    ForEach(stateIdentifiers.indices, id: \.self) { index in
                         HStack {
-                            Text(identifiers[index])
+                            Text(stateIdentifiers[index])
                             Spacer()
                             Divider()
                             Text("I_\(index)")
@@ -64,9 +64,9 @@ struct LexicalAnalyzerView: View {
                     .frame(height: 32)
 
                 List {
-                    ForEach(constants.indices, id: \.self) { index in
+                    ForEach(stateConstants.indices, id: \.self) { index in
                         HStack {
-                            Text(constants[index])
+                            Text(stateConstants[index])
                             Spacer()
                             Divider()
                             Text("C_\(index)")
@@ -85,13 +85,17 @@ struct LexicalAnalyzerView: View {
                 if wasStepStart {
                     processLexems = ""
                     identifiers = []
-                    constants = []
+                    constaints = []
+                    stateConstants = []
+                    stateIdentifiers = []
                     wasStepStart = false
                     sourceSelection = 0..<0
                 } else {
                     processLexems = ""
                     identifiers = []
-                    constants = []
+                    constaints = []
+                    stateConstants = []
+                    stateIdentifiers = []
                     sourceSelection = 0..<0
                     analyzer.process(symbols: sourceCode)
                 }
@@ -100,7 +104,9 @@ struct LexicalAnalyzerView: View {
             Button("Convert by steps") {
                 if !wasStepStart {
                     identifiers = []
-                    constants = []
+                    constaints = []
+                    stateConstants = []
+                    stateIdentifiers = []
                     processLexems = ""
                     analyzer.setupSumbols(symbols: sourceCode)
                     sourceSelection = 0..<0
@@ -133,6 +139,8 @@ struct LexicalAnalyzerView: View {
                     
                     processLexems += "I_\(identifierIndex)"
                     sourceSelection = sourceSelection!.upperBound - 1..<sourceSelection!.upperBound - 1
+                    
+                    stateIdentifiers = identifiers
                 },
                 
                 { buffer in
@@ -147,16 +155,20 @@ struct LexicalAnalyzerView: View {
                         processLexems += "I_\(identifierIndex)"
                     }
                     sourceSelection = sourceSelection!.upperBound - 1..<sourceSelection!.upperBound - 1
+                    
+                    stateIdentifiers = identifiers
                 },
                 
                 { buffer in
                     processLexems += processLexems.last != " " ? " " : ""
 
-                    if !constants.contains(buffer) { constants.append(buffer) }
-                    let constantIndex = constants.firstIndex(of: buffer)!
+                    if !constaints.contains(buffer) { constaints.append(buffer) }
+                    let constantIndex = constaints.firstIndex(of: buffer)!
                     
                     processLexems += "C_\(constantIndex)"
                     sourceSelection = sourceSelection!.upperBound - 1..<sourceSelection!.upperBound - 1
+                    
+                    stateConstants = constaints
                 },
                 
                 { _ in
@@ -166,11 +178,14 @@ struct LexicalAnalyzerView: View {
                 { buffer in
                     processLexems += processLexems.last != " " ? " " : ""
 
-                    if !constants.contains(buffer) { constants.append(buffer) }
-                    let constantIndex = constants.firstIndex(of: buffer)!
+                    if !constaints.contains(buffer) { constaints.append(buffer) }
+                    let constantIndex = constaints.firstIndex(of: buffer)!
                     
                     processLexems += "C_\(constantIndex)"
                     sourceSelection = sourceSelection!.upperBound - 1..<sourceSelection!.upperBound - 1
+                    
+                    stateConstants = constaints
+
                 },
                 
                 { buffer in
