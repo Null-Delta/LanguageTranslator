@@ -307,4 +307,26 @@ final class RPNTests: XCTestCase {
             to: "Console color 5 2 FUNCALL CALL red 5 2 FUNCALL CALL"
         )
     }
+    
+    func testFunctionDefinition() {
+        XCTAssert(false)
+    }
+    
+    func testWhileLoop() {
+        LanguageTranslator.constaints = ["1"]
+        LanguageTranslator.identifiers = ["a", "b"]
+
+        convertTest(
+            from: "while ( a > b ) { a = a + 1 ; } ;",
+            to: "a b > a a 1 + = 1 BLOCK WHILE"
+        )
+    }
+    
+    func testForLoop() {
+        XCTAssert(false)
+    }
+    
+    func testDoWhileLoop() {
+        XCTAssert(false)
+    }
 }

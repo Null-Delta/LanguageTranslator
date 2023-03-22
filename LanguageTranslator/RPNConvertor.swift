@@ -17,6 +17,7 @@ public enum RPNToken {
     case block(Int)
     case objectInitialization(Int)
     case call
+    case whileLoop
     
     // <var_type> <access_types> <[name | assignment]> count_of_access_types count_of_varriables VARDEF
     case variableDefinition(Int, Int)
@@ -54,6 +55,9 @@ public enum RPNToken {
             
         case .call:
             return "CALL"
+            
+        case .whileLoop:
+            return "WHILE"
         }
         
     }
@@ -178,6 +182,9 @@ public class RPNConvertor {
 
             case .serviceWord:
                 switch lexem {
+                case getLexem(for: "while"):
+                    stack.append(.whileLoop)
+                    
                 case getLexem(for: "new"):
                     stack.append(.lexem(lexem))
                     
@@ -337,6 +344,8 @@ public class RPNConvertor {
                     
                     if case .block(let count) = stack.last {
                         stack[stack.count - 1] = .block(count + 1)
+                    } else if case .whileLoop = stack.last {
+                        result.append(stack.removeLast())
                     }
                     
                     if !unclosedLabels.isEmpty && (unprocessedLexems.count == 1 || unprocessedLexems[1] != getLexem(for: "else")) {
