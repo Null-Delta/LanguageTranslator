@@ -16,6 +16,7 @@ public enum RPNToken {
     case justMove
     case block(Int)
     case objectInitialization(Int)
+    case call
     
     // <var_type> <access_types> <[name | assignment]> count_of_access_types count_of_varriables VARDEF
     case variableDefinition(Int, Int)
@@ -50,6 +51,9 @@ public enum RPNToken {
             
         case .objectInitialization(let count):
             return "\(count) OBJINIT"
+            
+        case .call:
+            return "CALL"
         }
         
     }
@@ -65,6 +69,7 @@ public enum RPNToken {
                 .arrayOperator,
                 .variableDefinition,
                 .objectInitialization,
+                .call,
                 .callFunction:
             return 0
             
@@ -211,6 +216,12 @@ public class RPNConvertor {
                 
             case .divider:
                 switch lexem {
+                case getLexem(for: "."):
+                    if case .call = stack.last {
+                        result.append(stack.removeLast())
+                    }
+                    stack.append(.call)
+                    
                 case getLexem(for: ","):
                     while !stack.isEmpty &&
                             (

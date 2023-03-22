@@ -277,4 +277,34 @@ final class RPNTests: XCTestCase {
             to: "float 1 ARRIND a float 5 2 ARRIND 1 OBJINIT = b float 228 2 ARRIND 1 OBJINIT = 0 2 VARDEF"
         )
     }
+    
+    func testObjectCall() {
+        LanguageTranslator.constaints = ["\"Hello\"", "5"]
+        LanguageTranslator.identifiers = ["Console", "WriteLine", "color", "red"]
+
+        convertTest(
+            from: "Console . WriteLine ( \"Hello\" ) ;",
+            to: "Console WriteLine \"Hello\" 2 FUNCALL CALL"
+        )
+        
+        convertTest(
+            from: "Console . color . red ;",
+            to: "Console color CALL red CALL"
+        )
+        
+        convertTest(
+            from: "Console . color ( 5 ) . red ;",
+            to: "Console color 5 2 FUNCALL CALL red CALL"
+        )
+        
+        convertTest(
+            from: "Console . color . red ( 5 ) ;",
+            to: "Console color CALL red 5 2 FUNCALL CALL"
+        )
+        
+        convertTest(
+            from: "Console . color ( 5 ) . red ( 5 ) ;",
+            to: "Console color 5 2 FUNCALL CALL red 5 2 FUNCALL CALL"
+        )
+    }
 }
