@@ -7,7 +7,7 @@
 
 import Foundation
 
-let serviceWords = [ "if", "else", "return", "for", "while", "static", "public", "using", "class", "void", "private", "protected", "int", "float", "double", "new", "string" ]
+let serviceWords = [ "if", "else", "return", "for", "while", "static", "public", "using", "class", "void", "private", "protected", "new" ]
 
 let operators = [ "+", "-", "=", "&", "|", "<", ">", "^", "!", "?", "*", "==", "++", "--", "+=", "-=", ">=", "<=", "!=", "/", "%" ]
 
