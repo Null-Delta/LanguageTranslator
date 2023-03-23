@@ -9,7 +9,7 @@ import Foundation
 
 import Foundation
 
-class LexicalAnalyzer: ObservableObject {
+public class LexicalAnalyzer: ObservableObject {
     
     typealias State = (String) -> (Int, Int?)
     
@@ -31,12 +31,12 @@ class LexicalAnalyzer: ObservableObject {
         return states[currentStateIndex]!
     }
     
-    init() {
+    public init() {
         self.currentStateIndex = 0
         self.states = generateStates()
     }
     
-    func process(symbols: String) {
+    public func process(symbols: String) {
         processingSymbols = symbols
         currentStateIndex = 0
         buffer = ""
@@ -44,11 +44,11 @@ class LexicalAnalyzer: ObservableObject {
         while processStep() { }
     }
     
-    func setupSumbols(symbols: String) {
+    public func setupSumbols(symbols: String) {
         processingSymbols = symbols
     }
     
-    func processStep() -> Bool {
+    public func processStep() -> Bool {
         guard processingSymbols.count != 0 else {
             let (nextState, functionIndex) = currentState("")
             currentStateIndex = nextState
@@ -80,7 +80,7 @@ class LexicalAnalyzer: ObservableObject {
         return true
     }
     
-    func updateProcedures(procedures: [(String) -> Void]) {
+    public func updateProcedures(procedures: [(String) -> Void]) {
         lexicalProcedures = procedures
     }
 }

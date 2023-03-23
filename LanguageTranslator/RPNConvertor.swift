@@ -9,31 +9,32 @@ import Foundation
 
 public enum RPNToken {
     case lexem(Lexem)
-    case arrayOperator(Int)
-    case callFunction(Int)
+    case arrayOperator
+    case callFunction
     case label(Int)
     case falseIfMove
     case justMove
     case block(Int)
-    case objectInitialization(Int)
+    case objectInitialization
     case call
     case whileLoop
-    
-    // <var_type> <access_types> <[name | assignment]> count_of_access_types count_of_varriables VARDEF
-    case variableDefinition(Int, Int)
-
-    // <access_types> <func_type> <name> <[params]> <block> count_of_access_types (count_of_params + 3) FUNDEF
+    case forLoop
+    case list(Int)
+    case classDefinition(Int)
+    case empty
+    case variableDefinition(Int)
+    case functionDefinition(Int)
 
     public var value: String {
         switch self {
         case .lexem(let lexem):
             return LanguageTranslator.value(for: lexem)
             
-        case .arrayOperator(let value):
-            return "\(value) ARRIND"
+        case .arrayOperator:
+            return "ARRIND"
             
-        case .callFunction(let argCount):
-            return "\(argCount) FUNCALL"
+        case .callFunction:
+            return "FUNCALL"
             
         case .label(let index):
             return "LBL\(index)"
@@ -47,20 +48,35 @@ public enum RPNToken {
         case .block(let count):
             return "\(count) BLOCK"
             
-        case .variableDefinition(let countOfAccessTypes, let countOfVarriables):
-            return "\(countOfAccessTypes) \(countOfVarriables) VARDEF"
-            
-        case .objectInitialization(let count):
-            return "\(count) OBJINIT"
+        case .variableDefinition(let countOfAccessTypes):
+            return "\(countOfAccessTypes) VARDEF"
+
+        case .functionDefinition(let countOfAccessTypes):
+            return "\(countOfAccessTypes) FUNCDEF"
+
+        case .objectInitialization:
+            return "OBJINIT"
             
         case .call:
             return "CALL"
             
         case .whileLoop:
             return "WHILE"
+            
+        case .forLoop:
+            return "FOR"
+            
+        case .list(let count):
+            return "\(count) LIST"
+            
+        case .empty:
+            return "EMPTY"
+            
+        case .classDefinition(let count):
+            return "\(count) CLASS"
         }
-        
     }
+    
     public var priority: Int {
         switch self {
         case
@@ -69,12 +85,18 @@ public enum RPNToken {
                 .lexem(getLexem(for: "{")),
                 .lexem(getLexem(for: "if")),
                 .lexem(getLexem(for: "else")),
-                .block,
-                .arrayOperator,
                 .variableDefinition,
+                .functionDefinition,
                 .objectInitialization,
+                .classDefinition,
+                .arrayOperator,
+                .callFunction,
+                .whileLoop,
+                .forLoop,
+                .empty,
+                .block,
                 .call,
-                .callFunction:
+                .list:
             return 0
             
         case
@@ -126,7 +148,6 @@ public enum RPNToken {
 public class RPNConvertor {
     private init() { }
     
-    
     public static func convert(lexems: [Lexem]) -> [RPNToken] {
         var unprocessedLexems = lexems
         var processedLexems: [Lexem] = []
@@ -137,14 +158,17 @@ public class RPNConvertor {
         var unclosedLabels: [Int] = []
         var labelCounter: Int = 0
         
+        var unclosedBacketsCount = 0
+        
         while !unprocessedLexems.isEmpty {
             
             let lexem = unprocessedLexems[0]
 
-            print(value(for: lexem))
-            print(stack.map { $0.value })
-            print(result.map { $0.value })
-            print()
+//            print(value(for: lexem))
+//            print(stack.map { $0.value })
+//            print(result.map { $0.value })
+//            print(processedLexems.map { value(for: $0) })
+//            print()
 
             
             switch lexem.type {
@@ -157,23 +181,50 @@ public class RPNConvertor {
                     lex.type == .identifier,
                     !stack.contains(where: { $0.value.contains("VARDEF") })
                 {
-                    if unprocessedLexems[1] == getLexem(for: "(") && (result.isEmpty) {
-                        // function declaration
-                    } else if processedLexems.last!.type == .identifier {
-                        let accessCount = stack.count
-                        
-                        while !stack.isEmpty { result.append(stack.removeFirst()) }
+                    let operatorsCount = stack.filter {
+                        if case .lexem(let lex) = $0 {
+                            return lex.type == .operator
+                        } else if case .call = $0 {
+                            return true
+                        } else {
+                            return false
+                        }
+                    }.count
+                    
+                    if unprocessedLexems[1] == getLexem(for: "(") && operatorsCount == 0  {
+                        let accessCount = stack.filter {
+                            if case .lexem(let lex) = $0 {
+                                return lex.type == .serviceWord
+                            } else {
+                                return false
+                            }
+                        }.count
                         result.append(.lexem(lexem))
-                        stack.append(.variableDefinition(accessCount, 1))
+
+                        while !stack.isEmpty && stack.last!.priority > 0 { result.append(stack.removeLast()) }
+
+                        stack.append(.functionDefinition(accessCount))
+                    } else if processedLexems.last!.type == .identifier {
+                        let accessCount = stack.filter {
+                            if case .lexem(let lex) = $0 {
+                                return lex.type == .serviceWord
+                            } else {
+                                return false
+                            }
+                        }.count
+                        
+                        while !stack.isEmpty && stack.last!.priority > 0 { result.append(stack.removeLast()) }
+                        result.append(.lexem(lexem))
+                        stack.append(.variableDefinition(accessCount))
                     } else {
                         result.append(.lexem(lexem))
                     }
-                } else if case .arrayOperator(_) = result.last, stack.isEmpty {
+                } else if case .arrayOperator = result.last, processedLexems[processedLexems.count - 2] == getLexem(for: "[") {
                     let accessCount = stack.count
                     
-                    while !stack.isEmpty { result.append(stack.removeFirst()) }
+                    while !stack.isEmpty && stack.last!.priority > 0 { result.append(stack.removeFirst()) }
                     result.append(.lexem(lexem))
-                    stack.append(.variableDefinition(accessCount, 1))
+                    stack.append(.variableDefinition(accessCount))
 
                 } else {
                     result.append(.lexem(lexem))
@@ -182,6 +233,22 @@ public class RPNConvertor {
 
             case .serviceWord:
                 switch lexem {
+                case getLexem(for: "for"):
+                    stack.append(.forLoop)
+                    
+                case getLexem(for: "class"):
+                    let accessCount = stack.filter {
+                        if case .lexem(let lex) = $0 {
+                            return lex.type == .serviceWord
+                        } else {
+                            return false
+                        }
+                    }.count
+                    
+                    while !stack.isEmpty && stack.last!.priority > 0 { result.append(stack.removeLast()) }
+
+                    stack.append(.classDefinition(accessCount))
+
                 case getLexem(for: "while"):
                     stack.append(.whileLoop)
                     
@@ -235,20 +302,23 @@ public class RPNConvertor {
                                 !stack.last!.value.contains("ARRIND") &&
                                 !stack.last!.value.contains("FUNCALL") &&
                                 !stack.last!.value.contains("BLOCK") &&
-                                !stack.last!.value.contains("VARDEF")
+                                !stack.last!.value.contains("VARDEF") &&
+                                !stack.last!.value.contains("LIST") &&
+                                !stack.last!.value.contains("(")
                             )
                     {
                         result.append(stack.removeLast())
                     }
                     
-                    if !stack.isEmpty {
-                        if case .arrayOperator(let value) = stack[stack.count - 1] {
-                            stack[stack.count - 1] = .arrayOperator(value + 1)
-                        } else if case .callFunction(let value) = stack[stack.count - 1] {
-                            stack[stack.count - 1] = .callFunction(value + 1)
-                        } else if case .variableDefinition(let count, let size) = stack[stack.count - 1] {
-                            stack[stack.count - 1] = .variableDefinition(count, size + 1)
-                        }
+                    if case .variableDefinition = stack.last, unclosedBacketsCount != 0 {
+                        result.append(stack.removeLast())
+                    }
+
+                    if case .list(let count) = stack.last {
+                        stack[stack.count - 1] = .list(count + 1)
+                    } else {
+                        stack.append(.list(2))
+
                     }
                     
                 case getLexem(for: "{"):
@@ -261,9 +331,11 @@ public class RPNConvertor {
                     stack.append(.block(0));
                     
                 case getLexem(for: "["):
-                    stack.append(.arrayOperator(2))
+                    stack.append(.arrayOperator)
                     
                 case getLexem(for: "("):
+                    unclosedBacketsCount += 1
+                    
                     if
                         !result.isEmpty,
                         let lex = processedLexems.last,
@@ -277,9 +349,9 @@ public class RPNConvertor {
                             }
                         ) {
                             stack.removeLast()
-                            stack.append(.objectInitialization(1))
-                        } else {
-                            stack.append(.callFunction(1))
+                            stack.append(.objectInitialization)
+                        } else if case .functionDefinition = stack.last { } else {
+                            stack.append(.callFunction)
                         }
                     } else {
                         stack.append(.lexem(lexem))
@@ -287,12 +359,19 @@ public class RPNConvertor {
                     
                 case getLexem(for: "]"):
                     if processedLexems.last == getLexem(for: "[") {
-                        if case .arrayOperator(let count) = stack.last {
-                            stack[stack.count - 1] = .arrayOperator(count - 1)
+                        result.append(.empty)
+                        if case .arrayOperator = stack.last {
                             result.append(stack.removeLast())
                         }
                     } else {
-                        result.append(stack.removeLast())
+                        if case .list = stack.last {
+                            result.append(stack.removeLast())
+                            if case .arrayOperator = stack.last {
+                                result.append(stack.removeLast())
+                            }
+                        } else {
+                            result.append(stack.removeLast())
+                        }
                     }
                     
                     if stack.contains(where: {
@@ -303,33 +382,36 @@ public class RPNConvertor {
                         }
                     ) {
                         stack.removeLast()
-                        stack.append(.objectInitialization(1))
+                        stack.append(.objectInitialization)
+                    }
+                    
+                    if case .objectInitialization = stack.last {
+                        stack.append(.empty)
                     }
                     
                 case getLexem(for: ")"):
+                    unclosedBacketsCount -= 1
+                    
+                    if processedLexems.last == getLexem(for: "(") || processedLexems.last == getLexem(for: ";")  {
+                        stack.append(.empty)
+                    }
+
                     while !stack.isEmpty && (
                         stack.last!.value != "(" &&
                         !stack.last!.value.contains("FUNCALL") &&
-                        !stack.last!.value.contains("OBJINIT")
+                        !stack.last!.value.contains("OBJINIT") &&
+                        !stack.last!.value.contains("FUNCDEF")
                     ) {
                         result.append(stack.removeLast())
                     }
                     
                     if !stack.isEmpty {
-                        if case .callFunction(let value) = stack.last! {
-                            if processedLexems.last != getLexem(for: "(") {
-                                stack[stack.count - 1] = .callFunction(value + 1)
-                            } else {
-                                stack[stack.count - 1] = .callFunction(value)
-                            }
+                        if case .callFunction = stack.last! {
                             result.append(stack.removeLast())
-                        } else if case .objectInitialization(let value) = stack.last! {
-                            if processedLexems.last != getLexem(for: "(") {
-                                stack[stack.count - 1] = .objectInitialization(value + 1)
-                            } else {
-                                stack[stack.count - 1] = .objectInitialization(value)
-                            }
+                        } else if case .objectInitialization = stack.last! {
                             result.append(stack.removeLast())
+                        } else if case .functionDefinition = stack.last {
+                            
                         } else {
                             stack.removeLast()
                         }
@@ -340,11 +422,34 @@ public class RPNConvertor {
                         result.append(stack.removeLast())
                     }
                     
-                    result.append(stack.removeLast())
+                    if case .block(let count) = stack.last {
+                        if case .list = result.last {
+                            stack[stack.count - 1] = .block(count + 1)
+                        } else if case .forLoop = result.last {
+                            stack[stack.count - 1] = .block(count + 1)
+                        }
+                    }
                     
+                    result.append(stack.removeLast())
+
                     if case .block(let count) = stack.last {
                         stack[stack.count - 1] = .block(count + 1)
                     } else if case .whileLoop = stack.last {
+                        result.append(stack.removeLast())
+                    } else if case .forLoop = stack.last {
+                        result.append(stack.removeLast())
+                    } else if case .functionDefinition = stack.last {
+                        let lastBlockIndex = stack.lastIndex(where: {
+                            if case .block = $0 {
+                                return true
+                            }
+                            return false
+                        })
+                        
+                        if let index = lastBlockIndex, case .block(let count) = stack[index] {
+                            stack[index] = .block(count + 1)
+                        }
+                        
                         result.append(stack.removeLast())
                     }
                     
@@ -354,7 +459,14 @@ public class RPNConvertor {
                     }
                     
                 case getLexem(for: ";"):
-                    while !stack.isEmpty && !stack.last!.value.contains("BLOCK") {
+                    if processedLexems.last == getLexem(for: "(") || processedLexems.last == getLexem(for: ";") {
+                        stack.append(.empty)
+                    }
+                    
+                    while !stack.isEmpty && (
+                        !stack.last!.value.contains("BLOCK") &&
+                        !stack.last!.value.contains("(")
+                    ) {
                         result.append(stack.removeLast())
                     }
                     

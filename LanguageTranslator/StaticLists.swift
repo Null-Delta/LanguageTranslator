@@ -7,11 +7,11 @@
 
 import Foundation
 
-let serviceWords = [ "if", "else", "return", "for", "while", "static", "public", "using", "class", "void", "private", "protected", "new" ]
+public let serviceWords = [ "if", "else", "return", "for", "while", "static", "public", "using", "class", "private", "protected", "new" ]
 
-let operators = [ "+", "-", "=", "&", "|", "<", ">", "^", "!", "?", "*", "==", "++", "--", "+=", "-=", ">=", "<=", "!=", "/", "%" ]
+public let operators = [ "+", "-", "=", "&", "|", "<", ">", "^", "!", "?", "*", "==", "++", "--", "+=", "-=", ">=", "<=", "!=", "/", "%" ]
 
-let dividers = "[]{}(),.;:".map { String($0) }
+public let dividers = "[]{}(),.;:".map { String($0) }
 
 public var identifiers: [String] = []
 public var constaints: [String] = []
@@ -67,5 +67,20 @@ public func value(for lexem: Lexem) -> String {
         return identifiers[lexem.index]
     case .constaint:
         return constaints[lexem.index]
+    }
+}
+
+public func shortValue(for lexem: Lexem) -> String {
+    switch lexem.type {
+    case .operator:
+        return "O_\(lexem.index)"
+    case .divider:
+        return "D_\(lexem.index)"
+    case .serviceWord:
+        return "S_\(lexem.index)"
+    case .identifier:
+        return "I_\(lexem.index)"
+    case .constaint:
+        return "C_\(lexem.index)"
     }
 }
