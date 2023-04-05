@@ -21,7 +21,7 @@ final class RPNTests: XCTestCase {
         let result = rpnLexems.map { $0.value }.joined(separator: " ")
 
         print("from: \(from)")
-        print("to: \(to)")
+        print("to:     \(to)")
         print("result: \(result)")
         print()
         
@@ -129,13 +129,48 @@ final class RPNTests: XCTestCase {
         
         convertTest(
             from: """
+            if ( a > b ) {
+                if ( c > d ) {
+                    a + c ;
+                } else {
+                    a + d ;
+                }
+            } else {
+                if ( c > d ) {
+                    b + c ;
+                }
+            }
+            """,
+            to: "a b > c d > a c + 1 BLOCK if a d + 1 BLOCK else 2 BLOCK if c d > b c + 1 BLOCK if 1 BLOCK else"
+        )
+        
+        convertTest(
+            from: """
+            if ( a > b ) {
+                if ( c > d ) {
+                    a + c ;
+                }
+            } else {
+                if ( c > d ) {
+                    b + c ;
+                }
+                else {
+                    b + d ;
+                }
+            }
+            """,
+            to: "a b > c d > a c + 1 BLOCK if 1 BLOCK if c d > b c + 1 BLOCK if b d + 1 BLOCK else 2 BLOCK else"
+        )
+
+        convertTest(
+            from: """
             if ( a + b > 5 ) {
                 a + 5 ;
             }
             """,
-            to: "a b + 5 > LBL0 IF a 5 + 1 BLOCK LBL0 :"
+            to: "a b + 5 > a 5 + 1 BLOCK if"
         )
-        
+                
         convertTest(
             from: """
             if ( a + b > 5 ) {
@@ -144,9 +179,9 @@ final class RPNTests: XCTestCase {
                 b + 5 ;
             }
             """,
-            to: "a b + 5 > LBL0 IF a 5 + 1 BLOCK LBL1 GOTO LBL0 : b 5 + 1 BLOCK LBL1 :"
+            to: "a b + 5 > a 5 + 1 BLOCK if b 5 + 1 BLOCK else"
         )
-        
+                
         convertTest(
             from: """
             if ( a > b ) {
@@ -159,41 +194,7 @@ final class RPNTests: XCTestCase {
                 }
             }
             """,
-            to: "a b > LBL0 IF c d > LBL1 IF a c + 1 BLOCK LBL1 : 1 BLOCK LBL2 GOTO LBL0 : c d > LBL3 IF b c + 1 BLOCK LBL3 : 1 BLOCK LBL2 :"
-        )
-        
-        convertTest(
-            from: """
-            if ( a > b ) {
-                if ( c > d ) {
-                    a + c ;
-                }
-            } else {
-                if ( c > d ) {
-                    b + c ;
-                } else {
-                    b + d ;
-                }
-            }
-            """,
-            to: "a b > LBL0 IF c d > LBL1 IF a c + 1 BLOCK LBL1 : 1 BLOCK LBL2 GOTO LBL0 : c d > LBL3 IF b c + 1 BLOCK LBL4 GOTO LBL3 : b d + 1 BLOCK LBL4 : 1 BLOCK LBL2 :"
-        )
-        
-        convertTest(
-            from: """
-            if ( a > b ) {
-                if ( c > d ) {
-                    a + c ;
-                } else {
-                    a + d ;
-                }
-            } else {
-                if ( c > d ) {
-                    b + c ;
-                }
-            }
-            """,
-            to: "a b > LBL0 IF c d > LBL1 IF a c + 1 BLOCK LBL2 GOTO LBL1 : a d + 1 BLOCK LBL2 : 1 BLOCK LBL3 GOTO LBL0 : c d > LBL4 IF b c + 1 BLOCK LBL4 : 1 BLOCK LBL3 :"
+            to: "a b > c d > a c + 1 BLOCK if 1 BLOCK if c d > b c + 1 BLOCK if 1 BLOCK else"
         )
         
         convertTest(
@@ -212,7 +213,7 @@ final class RPNTests: XCTestCase {
                 }
             }
             """,
-            to: "a b > LBL0 IF c d > LBL1 IF a c + 1 BLOCK LBL2 GOTO LBL1 : a d + 1 BLOCK LBL2 : 1 BLOCK LBL3 GOTO LBL0 : c d > LBL4 IF b c + 1 BLOCK LBL5 GOTO LBL4 : b d + 1 BLOCK LBL5 : 1 BLOCK LBL3 :"
+            to: "a b > c d > a c + 1 BLOCK if a d + 1 BLOCK else 2 BLOCK if c d > b c + 1 BLOCK if b d + 1 BLOCK else 2 BLOCK else"
         )
     }
     

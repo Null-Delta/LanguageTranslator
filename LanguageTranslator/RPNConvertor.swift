@@ -11,8 +11,6 @@ public enum RPNToken {
     case lexem(Lexem)
     case arrayOperator
     case callFunction
-    case label(Int)
-    case falseIfMove
     case justMove
     case block(Int)
     case objectInitialization
@@ -35,13 +33,7 @@ public enum RPNToken {
             
         case .callFunction:
             return "FUNCALL"
-            
-        case .label(let index):
-            return "LBL\(index)"
 
-        case .falseIfMove:
-            return "IF"
-            
         case .justMove:
             return "GOTO"
             
@@ -154,21 +146,18 @@ public class RPNConvertor {
                 
         var stack: [RPNToken] = []
         var result: [RPNToken] = []
-        
-        var unclosedLabels: [Int] = []
-        var labelCounter: Int = 0
-        
+                
         var unclosedBacketsCount = 0
         
         while !unprocessedLexems.isEmpty {
             
             let lexem = unprocessedLexems[0]
 
-//            print(value(for: lexem))
-//            print(stack.map { $0.value })
-//            print(result.map { $0.value })
-//            print(processedLexems.map { value(for: $0) })
-//            print()
+            print(value(for: lexem))
+            print(stack.map { $0.value })
+            print(result.map { $0.value })
+            print(processedLexems.map { value(for: $0) })
+            print()
 
             
             switch lexem.type {
@@ -256,21 +245,10 @@ public class RPNConvertor {
                     stack.append(.lexem(lexem))
                     
                 case getLexem(for: "if"):
-                    stack.append(.falseIfMove)
+                    stack.append(.lexem(lexem))
                     
                 case getLexem(for: "else"):
-                    if case .block(let count) = stack.last {
-                        stack[stack.count - 1] = .block(count - 1)
-                    }
-                    
-                    result.append(.label(labelCounter))
-                    result.append(.justMove)
-                    result.append(.label(unclosedLabels.last!))
-                    result.append(.lexem(getLexem(for: ":")!))
-                    
-                    unclosedLabels.removeLast()
-                    unclosedLabels.append(labelCounter)
-                    labelCounter += 1
+                    stack.append(.lexem(lexem))
 
                 default:
                     stack.append(.lexem(lexem))
@@ -322,12 +300,6 @@ public class RPNConvertor {
                     }
                     
                 case getLexem(for: "{"):
-                    if case .falseIfMove = stack.last {
-                        result.append(.label(labelCounter))
-                        unclosedLabels.append(labelCounter)
-                        labelCounter += 1
-                        result.append(stack.removeLast())
-                    }
                     stack.append(.block(0));
                     
                 case getLexem(for: "["):
@@ -451,13 +423,18 @@ public class RPNConvertor {
                         }
                         
                         result.append(stack.removeLast())
+                    } else if case .lexem(let lex) = stack.last, value(for: lex) == "if" {
+                        result.append(stack.removeLast())
+                        if case .block(let count) = stack.last {
+                            stack[stack.count - 1] = .block(count + 1)
+                        }
+                    } else if case .lexem(let lex) = stack.last, value(for: lex) == "else" {
+                        result.append(stack.removeLast())
+                        if case .block(let count) = stack.last {
+                            stack[stack.count - 1] = .block(count + 1)
+                        }
                     }
-                    
-                    if !unclosedLabels.isEmpty && (unprocessedLexems.count == 1 || unprocessedLexems[1] != getLexem(for: "else")) {
-                        result.append(.label(unclosedLabels.removeLast()))
-                        result.append(.lexem(getLexem(for: ":")!))
-                    }
-                    
+                                        
                 case getLexem(for: ";"):
                     if processedLexems.last == getLexem(for: "(") || processedLexems.last == getLexem(for: ";") {
                         stack.append(.empty)
