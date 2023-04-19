@@ -11,7 +11,6 @@ public enum RPNToken {
     case lexem(Lexem)
     case arrayOperator
     case callFunction
-    case justMove
     case block(Int)
     case objectInitialization
     case call
@@ -33,9 +32,6 @@ public enum RPNToken {
             
         case .callFunction:
             return "FUNCALL"
-
-        case .justMove:
-            return "GOTO"
             
         case .block(let count):
             return "\(count) BLOCK"
