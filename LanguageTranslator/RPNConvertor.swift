@@ -73,6 +73,7 @@ public enum RPNToken {
                 .lexem(getLexem(for: "{")),
                 .lexem(getLexem(for: "if")),
                 .lexem(getLexem(for: "else")),
+                .lexem(getLexem(for: "return")),
                 .variableDefinition,
                 .functionDefinition,
                 .objectInitialization,
@@ -218,6 +219,9 @@ public class RPNConvertor {
 
             case .serviceWord:
                 switch lexem {
+                case getLexem(for: "return"):
+                    stack.append(.lexem(lexem))
+
                 case getLexem(for: "for"):
                     stack.append(.forLoop)
                     
@@ -402,8 +406,15 @@ public class RPNConvertor {
 
                     if case .block(let count) = stack.last {
                         stack[stack.count - 1] = .block(count + 1)
-                    } else if case .whileLoop = stack.last {
+                    }
+                    
+                    if case .whileLoop = stack.last {
                         result.append(stack.removeLast())
+
+                        if case .block(let count) = stack.last {
+                            stack[stack.count - 1] = .block(count + 1)
+                        }
+
                     } else if case .forLoop = stack.last {
                         result.append(stack.removeLast())
                     } else if case .functionDefinition = stack.last {
@@ -458,6 +469,8 @@ public class RPNConvertor {
         while !stack.isEmpty {
             result.append(stack.removeLast())
         }
+
+        print(result.map { $0.value }.joined(separator: " "))
         
         return result
     }

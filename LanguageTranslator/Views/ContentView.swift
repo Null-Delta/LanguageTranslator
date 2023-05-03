@@ -12,6 +12,7 @@ struct ContentView: View {
         NavigationSplitView(sidebar: {
             List {
                 NavigationLink("Лексический анализатор", destination: LexicalAnalyzerView())
+                NavigationLink("Транслятор", destination: CSharpToRView())
             }
         }, detail: {
             Text("Выберите вкладку")

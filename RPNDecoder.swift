@@ -39,10 +39,17 @@ public class RPNDecoder {
                 constructCommand(tokens: &tokens),
                 constructCommand(tokens: &tokens)
             ])
+        case .lexem(let lexem) where value(for: lexem) == "return":
+            return Command(commandToken: tokens.removeLast(), arguments: [constructCommand(tokens: &tokens)])
 
-        case .lexem(let lexem) where value(for: lexem) == "if" || value(for: lexem) == "else":
+        case .lexem(let lexem) where value(for: lexem) == "if":
             return Command(commandToken: tokens.removeLast(), arguments: [
                 constructCommand(tokens: &tokens),
+                constructCommand(tokens: &tokens)
+            ])
+
+        case .lexem(let lexem) where value(for: lexem) == "else":
+            return Command(commandToken: tokens.removeLast(), arguments: [
                 constructCommand(tokens: &tokens)
             ])
 
@@ -93,7 +100,7 @@ public class RPNDecoder {
             })
             
         case .classDefinition(let int):
-            return Command(commandToken: tokens.removeLast(), arguments: (0..<int).map { _ in
+            return Command(commandToken: tokens.removeLast(), arguments: (0..<int + 2).map { _ in
                 constructCommand(tokens: &tokens)
             })
         case .empty:
@@ -103,9 +110,13 @@ public class RPNDecoder {
             var subcommands: [Command] = []
             let main = tokens.removeLast()
             
+
             subcommands.append(constructCommand(tokens: &tokens))
-            subcommands.append(constructCommand(tokens: &tokens))
-            (0..<int).forEach { _ in subcommands.append(constructCommand(tokens: &tokens)) }
+            subcommands.append(Command(commandToken: tokens.removeLast(), arguments: []))
+
+            if int > 0 {
+                (0..<int - 1).forEach { _ in subcommands.append(constructCommand(tokens: &tokens)) }
+            }
             
             return Command(commandToken: main, arguments: subcommands)
             
@@ -129,23 +140,65 @@ public class RPNDecoder {
         var localTokens = tokens
         
         var result = ""
+        
         while !localTokens.isEmpty {
             let command = constructCommand(tokens: &localTokens)
             command.log()
             result = toString(command: command) + "\n" + result
         }
+
+        result = """
+        Console.WriteLine <- function(argument) {
+          print(argument)
+        }\n
+        """ + result
+
+        result += "Main()"
         
         return result
     }
     
-    private static func toString(command: Command, tabs: Int = 0) -> String {
+    private static func toString(command: Command, tabs: Int = 0, needBuckets: Bool = true) -> String {
         var result = ""
+        let tab = "  "
         
         switch command.commandToken {
-                        
+        case .lexem(let lexem) where lexem.type == .operator && value(for: lexem) == "=":
+            if needBuckets {
+                result = "(" + toString(command: command.arguments[1]) + " <- " + toString(command: command.arguments[0]) + ")"
+            } else {
+                result = toString(command: command.arguments[1]) + " <- " + toString(command: command.arguments[0])
+            }
+            result = Array(repeating: tab, count: tabs).joined() + result
+
         case .lexem(let lexem) where lexem.type == .operator:
-            result = "(" + toString(command: command.arguments[1]) + " " + command.commandToken.value + " " + toString(command: command.arguments[0]) + ")"
-            
+            if needBuckets {
+                result = "(" + toString(command: command.arguments[1]) + " " + command.commandToken.value + " " + toString(command: command.arguments[0]) + ")"
+            } else {
+                result = toString(command: command.arguments[1]) + " " + command.commandToken.value + " " + toString(command: command.arguments[0])
+            }
+            result = Array(repeating: tab, count: tabs).joined() + result
+
+        case .lexem(let lexem) where value(for: lexem) == "if":
+            result = value(for: lexem)
+            + "("
+            + toString(command: command.arguments[1])
+            + ") {\n"
+            + toString(command: command.arguments[0], tabs: tabs)
+            + Array(repeating: tab, count: tabs).joined() + "}"
+            result = Array(repeating: tab, count: tabs).joined() + result
+
+        case .lexem(let lexem) where value(for: lexem) == "else":
+            result = value(for: lexem)
+            + " {\n"
+            + toString(command: command.arguments[0], tabs: tabs)
+            + Array(repeating: tab, count: tabs).joined() + "}"
+            result = Array(repeating: tab, count: tabs).joined() + result
+
+        case .lexem(let lexem) where value(for: lexem) == "return":
+            result = value(for: lexem) + "(" + toString(command: command.arguments[0]) + ")"
+            result = Array(repeating: tab, count: tabs).joined() + result
+
         case .lexem(let lexem):
             result = value(for: lexem)
 
@@ -153,40 +206,66 @@ public class RPNDecoder {
             result = "[" + toString(command: command.arguments[0]) + "]"
             
         case .callFunction:
-            result = toString(command: command.arguments[1], tabs: tabs + 1) + "(" + toString(command: command.arguments[0]) + ")"
-            
+            result = toString(command: command.arguments[1], tabs: tabs) + "(" + toString(command: command.arguments[0]) + ")"
+            result = Array(repeating: tab, count: tabs).joined() + result
+
         case .block:
-            let values = command.arguments.reversed().map { toString(command: $0, tabs: tabs + 1) }.joined(separator: "\n")
-            result = "{\n" + values + "\n" + Array(repeating: "  ", count: tabs).joined() + "}"
+            let values = command.arguments.reversed().map { toString(command: $0, tabs: tabs + 1, needBuckets: false) + "\n" }.joined()
+            result = values
             
         case .objectInitialization:
             assertionFailure()
             
         case .call:
-            result = toString(command: command.arguments[0]) + "." + toString(command: command.arguments[1])
+            result = toString(command: command.arguments[1]) + "." + toString(command: command.arguments[0])
+            result = Array(repeating: tab, count: tabs).joined() + result
             
         case .whileLoop:
-            result = "while (" + toString(command: command.arguments[1]) + ") " + toString(command: command.arguments[0])
+            result = "while ("
+            + toString(command: command.arguments[1], needBuckets: false)
+            + ") {\n"
+            + toString(command: command.arguments[0], tabs: tabs)
+            + Array(repeating: tab, count: tabs).joined() + "}"
+            result = Array(repeating: tab, count: tabs).joined() + result
             
         case .forLoop:
+            result = toString(command: command.arguments[3], needBuckets: false)
+            + "\n"
+            + Array(repeating: tab, count: tabs).joined()
+            + "while (" + toString(command: command.arguments[2], needBuckets: false) + ") {\n"
+            + toString(command: command.arguments[0], tabs: tabs, needBuckets: false)
+            + toString(command: command.arguments[1], tabs: tabs + 1, needBuckets: false)
+            + "\n"
+            + Array(repeating: tab, count: tabs).joined() + "}"
+
+            result = Array(repeating: tab, count: tabs).joined() + result
             break
             
         case .list:
             result = command.arguments.reversed().map { toString(command: $0) }.joined(separator: ", ")
             
         case .classDefinition(_):
-            assertionFailure()
-            
+            let result = toString(command: command.arguments[0], tabs: tabs - 1)
+            return result
+
         case .empty:
             result = ""
             
         case .variableDefinition(_):
-            result = toString(command: command.arguments[0])
-            
+            result = toString(command: command.arguments[0], needBuckets: needBuckets)
+            result = Array(repeating: tab, count: tabs).joined() + result
+
         case .functionDefinition(let count):
-            result = toString(command: command.arguments[count + 2], tabs: tabs + 1) + " <- function(" + toString(command: command.arguments[1]) + ")" + toString(command: command.arguments[0], tabs: tabs + 1)
+            result = toString(command: command.arguments[count + 2], tabs: tabs)
+            + " <- function("
+            + toString(command: command.arguments[1])
+            + ") {\n"
+            + toString(command: command.arguments[0], tabs: tabs)
+            + Array(repeating: tab, count: tabs).joined()
+            + "}"
+            result = Array(repeating: tab, count: tabs).joined() + result
         }
         
-        return Array(repeating: "  ", count: tabs).joined() + result
+        return result
     }
 }

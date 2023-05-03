@@ -22,22 +22,24 @@ final class DecoderTests: XCTestCase {
 
     
     func testExample() throws {
-        LanguageTranslator.constaints = ["0", "1", "100"]
-        LanguageTranslator.identifiers = ["int", "from", "to", "sum", "result", "iterator"]
+        LanguageTranslator.constaints = ["0", "1", "100", "50", "10"]
+        LanguageTranslator.identifiers = ["int", "from", "to", "sum", "result", "iterator", "sum2", "bool", "flex", "i", "Program", "Main", "void" ]
 
         let tokens = convertTest(
             from: """
-            int sum ( int from , int to ) {
-                int result = 0 ;
-                int iterator = from ;
-                while ( iterator <= to ) {
-                    result += iterator ;
-                    iterator += 1 ;
-                } ;
-                return result ;
+            class Program {
+                int sum ( int from , int to ) {
+                    int sum = 0 ;
+                    for ( int i = from ; i <= to ; i = i + 1 ) {
+                        sum = sum + i ;
+                    } ;
+                    return sum ;
+                }
+
+                void Main ( ) {
+                    sum ( 1 , 100 ) ;
+                }
             }
-            
-            sum ( 1 , 100 ) ;
             """,
             to: "3 4 2 * 1 5 - 2 ^ / +"
         )

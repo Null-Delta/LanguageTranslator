@@ -187,7 +187,8 @@ extension LexicalAnalyzer {
                 switch char {
                 case "/": return (10, nil)
                 case "*": return (8, nil)
-                default: fatalError()
+                case operators: return (15, nil)
+                default: return (0, 7)
                 }
             },
             
